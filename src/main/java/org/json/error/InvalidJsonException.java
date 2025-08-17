@@ -1,4 +1,7 @@
-package org.json.parser;
+package org.json.error;
 
-public class InvalidJsonException {
+public class InvalidJsonException extends RuntimeException {
+    public InvalidJsonException(String s) {
+        super(s);
+    }
 }

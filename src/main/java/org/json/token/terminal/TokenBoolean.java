@@ -3,15 +3,15 @@ package org.json.token.terminal;
 import org.json.token.Token;
 import org.json.token.TokenType;
 
-public class TokenNumber extends Token {
-    private final String string;
+public class TokenBoolean extends Token {
+    private final Boolean booleanValue;
 
-    public TokenNumber(String string, TokenType tokenType) {
-        super(tokenType);
-        this.string = string;
+    public TokenBoolean(Boolean booleanValue) {
+        super(TokenType.BOOLEAN);
+        this.booleanValue = booleanValue;
     }
 
-    public String getString(){
-        return string;
+    public Boolean getBoolean(){
+        return booleanValue;
     }
 }
