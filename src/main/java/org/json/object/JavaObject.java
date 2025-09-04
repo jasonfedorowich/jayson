@@ -1,4 +1,13 @@
 package org.json.object;
 
-public interface JavaObject {
+interface JavaObject {
+
+    enum Type{
+        POJO,
+        ARRAY,
+        LIST,
+        STRING, INTEGER, BOOLEAN, DOUBLE, LONG, TERMINAL
+    }
+
+    Type getObjectType();
 }

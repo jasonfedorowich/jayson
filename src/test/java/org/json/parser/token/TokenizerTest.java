@@ -1,12 +1,15 @@
+package org.json.parser.token;
+
 import org.json.error.InvalidTokenException;
-import org.json.token.Token;
-import org.json.token.Tokenizer;
+import org.json.parser.token.terminal.TokenNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class TestToken {
+import static org.junit.jupiter.api.Assertions.*;
+
+class TokenizerTest {
 
     @Test
     public void testTokenizeEmptyJson(){
@@ -56,6 +59,15 @@ public class TestToken {
 
         Tokenizer tokenizer = new Tokenizer(json);
         Assertions.assertThrows(InvalidTokenException.class, tokenizer::scan);
+    }
+
+    @Test
+    public void testNull(){
+        String json = "{null}";
+        Tokenizer tokenizer = new Tokenizer(json);
+        List<Token> tokens =  tokenizer.scan();
+        Assertions.assertEquals(3, tokens.size());
+        Assertions.assertEquals(TokenNull.class, tokens.get(1).getClass());
     }
 
 }

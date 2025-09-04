@@ -1,4 +1,7 @@
 package org.json.error;
 
-public class InvalidObjectMapperException {
+public class InvalidObjectMapperException extends RuntimeException {
+    public InvalidObjectMapperException(Exception e) {
+        super(e);
+    }
 }

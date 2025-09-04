@@ -1,7 +1,7 @@
-package org.json.token.terminal;
+package org.json.parser.token.terminal;
 
-import org.json.token.Token;
-import org.json.token.TokenType;
+import org.json.parser.token.Token;
+import org.json.parser.token.TokenType;
 
 public abstract class TokenNumber extends Token {
 

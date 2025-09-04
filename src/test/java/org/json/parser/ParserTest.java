@@ -1,16 +1,17 @@
+package org.json.parser;
+
 import org.json.error.InvalidJsonException;
-import org.json.error.InvalidTokenException;
-import org.json.parser.Parser;
-import org.json.token.Token;
-import org.json.token.Tokenizer;
+import org.json.parser.token.Token;
+import org.json.parser.token.Tokenizer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
 
-public class TestParser {
+import static org.junit.jupiter.api.Assertions.*;
+
+class ParserTest {
 
     @Test
     public void testParseEmptyJson(){
@@ -18,9 +19,9 @@ public class TestParser {
         Tokenizer tokenizer = new Tokenizer(s);
         LinkedList<Token> tokens =  tokenizer.scan();
         Parser parser = new Parser(tokens);
-        LinkedHashMap<String, Object> json = parser.parse();
+        LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>)parser.parse();
 
-        Assertions.assertTrue(json.isEmpty());
+        assertTrue(json.isEmpty());
 
     }
 
@@ -31,10 +32,8 @@ public class TestParser {
         LinkedList<Token> tokens =  tokenizer.scan();
 
         Parser parser = new Parser(tokens);
-
-        Assertions.assertThrows(InvalidJsonException.class, ()->{
-            LinkedHashMap<String, Object> json = parser.parse();
-        });
+        LinkedList<Object> json = (LinkedList<Object>) parser.parse();
+        assertTrue(json.isEmpty());
     }
 
     @Test
@@ -63,11 +62,11 @@ public class TestParser {
 
         Parser parser = new Parser(tokens);
 
-        LinkedHashMap<String, Object> map = parser.parse();
+        LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>)parser.parse();
 
         Assertions.assertEquals(6, map.size());
 
-        Assertions.assertTrue((Boolean)map.get("boolean1"));
+        assertTrue((Boolean)map.get("boolean1"));
         Assertions.assertFalse((Boolean)map.get("boolean2"));
         LinkedHashMap<String, Object> inner = (LinkedHashMap<String, Object>) map.get("inner");
         LinkedList<Object> somethingHere = (LinkedList<Object>) inner.get("something here");
@@ -87,4 +86,14 @@ public class TestParser {
         Parser parser = new Parser(tokens);
         Assertions.assertThrows(InvalidJsonException.class, parser::parse);
     }
+
+    @Test
+    public void testJsonNullValue(){
+        String json = "{\"name\": null}";
+        Tokenizer tokenizer = new Tokenizer(json);
+        Parser parser = new Parser(tokenizer.scan());
+        LinkedHashMap<String, Object> object = (LinkedHashMap<String, Object>)parser.parse();
+        assertNull(object.get("name"));
+    }
+
 }

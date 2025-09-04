@@ -1,4 +1,4 @@
-package org.json.token;
+package org.json.parser.token;
 
 public enum TokenType {
 
@@ -17,8 +17,9 @@ public enum TokenType {
 
     NUMBER('n'),
 
-    BOOLEAN('b');
+    BOOLEAN('b'),
 
+    NULL('n');
 
     final char c;
     TokenType(char c){

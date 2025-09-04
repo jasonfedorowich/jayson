@@ -1,11 +1,12 @@
 package org.json.parser;
 
 import org.json.error.InvalidJsonException;
-import org.json.token.Token;
-import org.json.token.terminal.TokenBoolean;
-import org.json.token.terminal.TokenNumber;
-import org.json.token.terminal.TokenString;
-import org.json.token.TokenType;
+import org.json.error.InvalidTokenException;
+import org.json.parser.token.Token;
+import org.json.parser.token.terminal.TokenBoolean;
+import org.json.parser.token.terminal.TokenNumber;
+import org.json.parser.token.terminal.TokenString;
+import org.json.parser.token.TokenType;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -19,13 +20,17 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public LinkedHashMap<String, Object> parse(){
-        LinkedHashMap<String, Object> object = parseObject();
-       expectEnd();
-       return object;
+    public Object parse(){
+        if(tokens == null || tokens.isEmpty()) return null;
+        Object json = switch (tokens.peekFirst().getType()) {
+            case OPEN_SQUARE_BRACE -> parseArray();
+            case OPEN_CURLY_BRACE -> parseObject();
+            case NULL -> null;
+            default -> throw new InvalidTokenException("Unexpected token type: " + tokens.peekFirst().getType());
+        };
+        expectEnd();
+       return json;
     }
-
-
 
     private LinkedHashMap<String, Object> parseObject() {
         expectCurlyBraceOpen();
@@ -54,6 +59,9 @@ public class Parser {
                 case NUMBER:
                     object.put(key, parseNumber());
                     break;
+                case NULL:
+                    object.put(key, parseNull());
+                    break;
                 default:
                     throw new InvalidJsonException("Unknown token: " + type);
             }
@@ -77,6 +85,9 @@ public class Parser {
 
             TokenType type = peekFirst().getType();
             switch(type){
+                case NULL:
+                    array.add(parseNull());
+                    break;
                 case QUOTE:
                     array.add(parseString());
                     break;
@@ -104,6 +115,10 @@ public class Parser {
 
         return array;
 
+    }
+    private Object parseNull() {
+        pollFirst();
+        return null;
     }
 
     private Object parseNumber() {

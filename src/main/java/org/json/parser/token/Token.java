@@ -1,4 +1,4 @@
-package org.json.token;
+package org.json.parser.token;
 
 public class Token {
 

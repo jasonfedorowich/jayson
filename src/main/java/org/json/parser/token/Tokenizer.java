@@ -1,9 +1,10 @@
-package org.json.token;
+package org.json.parser.token;
 
 import org.json.error.InvalidTokenException;
-import org.json.token.terminal.TokenBoolean;
-import org.json.token.terminal.TokenNumber;
-import org.json.token.terminal.TokenString;
+import org.json.parser.token.terminal.TokenBoolean;
+import org.json.parser.token.terminal.TokenNull;
+import org.json.parser.token.terminal.TokenNumber;
+import org.json.parser.token.terminal.TokenString;
 
 import java.util.LinkedList;
 
@@ -18,6 +19,7 @@ public class Tokenizer {
     public Tokenizer(String json){
         this.json = json;
     }
+    //todo add null
 
     public LinkedList<Token> scan(){
         while(isNotEnd()){
@@ -55,6 +57,9 @@ public class Tokenizer {
             case 't', 'f':
                 addBoolean(t);
                 break;
+            case 'n':
+                addNull(t);
+                break;
             default:
                if(Character.isDigit(t)){
                    addNumber(t);
@@ -64,6 +69,16 @@ public class Tokenizer {
                else throw new InvalidTokenException("Invalid token: " + t);
         }
 
+    }
+
+    private void addNull(char t) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(t);
+        sb.append(validateAdvance());
+        sb.append(validateAdvance());
+        sb.append(validateAdvance());
+        if(!sb.toString().equals("null")) throw new InvalidTokenException("Expected null value got: " + sb.toString());
+        tokens.add(new TokenNull());
     }
 
     private void addBoolean(char t) {
