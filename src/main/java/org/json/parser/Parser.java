@@ -10,6 +10,7 @@ import org.json.parser.token.TokenType;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Stack;
 
 public class Parser {
 
@@ -34,33 +35,54 @@ public class Parser {
 
     private LinkedHashMap<String, Object> parseObject() {
         expectCurlyBraceOpen();
+        Stack<LinkedHashMap<String, Object>> stack = new Stack<>();
+        LinkedList<String> keys = new LinkedList<>();
 
         LinkedHashMap<String, Object> object = new LinkedHashMap<>();
+        stack.add(object);
 
-        while(isNotEndObject()){
-            String key = expectKey();
-            expectColon();
-            if(object.containsKey(key)) throw new InvalidJsonException("Got duplicated key: " + key);
+        while(!stack.isEmpty()){
 
             TokenType type = peekFirst().getType();
             switch(type){
                 case QUOTE:
-                    object.put(key, parseString());
+                    if(keys.isEmpty()){
+                        String key = expectKey();
+                        expectColon();
+                        if(object.containsKey(key)) throw new InvalidJsonException("Got duplicated key: " + key);
+                        keys.add(key);
+                        continue;
+                    }else{
+                        object.put(keys.pop(), parseString());
+                    }
                     break;
                 case OPEN_SQUARE_BRACE:
-                    object.put(key, parseArray());
+                    object.put(keys.pop(), parseArray());
                     break;
                 case OPEN_CURLY_BRACE:
-                    object.put(key, parseObject());
-                    break;
+                    expectCurlyBraceOpen();
+                    LinkedHashMap<String, Object> newObject = new LinkedHashMap<>();
+                    object.put(keys.pop(), newObject);
+                    stack.push(newObject);
+                    object = newObject;
+                    continue;
                 case BOOLEAN:
-                    object.put(key, parseBoolean());
+                    object.put(keys.pop(), parseBoolean());
                     break;
                 case NUMBER:
-                    object.put(key, parseNumber());
+                    object.put(keys.pop(), parseNumber());
                     break;
                 case NULL:
-                    object.put(key, parseNull());
+                    object.put(keys.pop(), parseNull());
+                    break;
+                case CLOSED_CURLY_BRACE:
+                    expectClosedCurlyBrace();
+                    stack.pop();
+                    if(stack.isEmpty()){
+                        return object;
+                    }else{
+                        object = stack.peek();
+                    }
                     break;
                 default:
                     throw new InvalidJsonException("Unknown token: " + type);
@@ -69,7 +91,7 @@ public class Parser {
             expectCommaOrEnd(TokenType.CLOSED_CURLY_BRACE);
         }
 
-        expectEndObject();
+        expectEndObject(stack);
 
         return object;
     }
@@ -79,9 +101,12 @@ public class Parser {
 
     private Object parseArray() {
         LinkedList<Object> array = new LinkedList<>();
+        Stack<LinkedList<Object>> stack = new Stack<>();
+        stack.push(array);
+
         expectOpenArray();
 
-        while(isNotEndArray()){
+        while(!stack.isEmpty()){
 
             TokenType type = peekFirst().getType();
             switch(type){
@@ -92,8 +117,12 @@ public class Parser {
                     array.add(parseString());
                     break;
                 case OPEN_SQUARE_BRACE:
-                    array.add(parseArray());
-                    break;
+                    expectCurlyBraceOpen();
+                    LinkedList<Object> newArray = new LinkedList<>();
+                    array.add(newArray);
+                    stack.push(newArray);
+                    array = newArray;
+                    continue;
                 case OPEN_CURLY_BRACE:
                     array.add(parseObject());
                     break;
@@ -103,6 +132,15 @@ public class Parser {
                 case NUMBER:
                     array.add(parseNumber());
                     break;
+                case CLOSED_SQUARE_BRACE:
+                    expectClosedSquareBrace();
+                    stack.pop();
+                    if(stack.isEmpty()){
+                        return array;
+                    }else{
+                        array = stack.peek();
+                    }
+                    break;
                 default:
                     throw new InvalidJsonException("Unknown token: " + type);
             }
@@ -111,11 +149,14 @@ public class Parser {
 
         }
 
-        expectEndArray();
+        expectEndArray(stack);
 
         return array;
 
     }
+
+
+
     private Object parseNull() {
         pollFirst();
         return null;
@@ -145,27 +186,34 @@ public class Parser {
         if(!this.tokens.isEmpty()) throw new InvalidJsonException("Invalid json object expected end got: " + tokens);
     }
 
-    private void expectEndObject() {
+    private void expectClosedSquareBrace() {
+        Token token = pollFirst();
+        if(!token.getType().equals(TokenType.CLOSED_SQUARE_BRACE)) throw new InvalidJsonException("Expected closed array got: " + token.getType());
+
+    }
+
+    private void expectEndObject(Stack<LinkedHashMap<String, Object>> stack) {
+        Token token = pollFirst();
+        stack.pop();
+        if(!token.getType().equals(TokenType.CLOSED_CURLY_BRACE)) throw new InvalidJsonException("Expected closed object got: " + token.getType());
+        if(!stack.isEmpty()) throw new InvalidJsonException("Invalid json object still not empty");
+    }
+
+    private void expectClosedCurlyBrace() {
         Token token = pollFirst();
         if(!token.getType().equals(TokenType.CLOSED_CURLY_BRACE)) throw new InvalidJsonException("Expected closed object got: " + token.getType());
     }
 
-    private boolean isNotEndObject() {
-        return !peekFirst().getType().equals(TokenType.CLOSED_CURLY_BRACE);
-    }
-
-    private void expectEndArray() {
+    private void expectEndArray(Stack<LinkedList<Object>> stack) {
         Token token = pollFirst();
+        stack.pop();
         if(!token.getType().equals(TokenType.CLOSED_SQUARE_BRACE)) throw new InvalidJsonException("Expected closed array got: " + token.getType());
+        if(!stack.isEmpty()) throw new InvalidJsonException("Invalid array object still not empty");
     }
 
     private void expectOpenArray() {
         Token token = pollFirst();
         if(!token.getType().equals(TokenType.OPEN_SQUARE_BRACE)) throw new InvalidJsonException("Expected open array got: " + token.getType());
-    }
-
-    private boolean isNotEndArray() {
-        return !peekFirst().getType().equals(TokenType.CLOSED_SQUARE_BRACE);
     }
 
 
@@ -179,7 +227,6 @@ public class Parser {
             throw new InvalidJsonException("Unknown token when expected comma or end brace: "+ next);
         }
     }
-
 
 
     private void expectCurlyBraceOpen() {
@@ -215,5 +262,6 @@ public class Parser {
         if(tokens.isEmpty()) throw new InvalidJsonException("Empty json");
         return tokens.peekFirst();
     }
+
 
 }

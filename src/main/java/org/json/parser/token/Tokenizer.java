@@ -110,6 +110,7 @@ public class Tokenizer {
             sb.append(advance());
         }
 
+        //todo there may be a bug here if it reaches the end
         if(peek() == '.'){
             do {
                 sb.append(advance());
