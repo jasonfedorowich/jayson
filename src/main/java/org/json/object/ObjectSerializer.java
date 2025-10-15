@@ -88,6 +88,19 @@ public class ObjectSerializer {
         if(object == null) {
             return "null";
         }
+
+
+        if(obj.javaObject().isPrimitive()){
+            ObjectMapper.TerminalObject terminalObject= (ObjectMapper.TerminalObject)obj.javaObject();
+            return switch(terminalObject.getTerminalType()){
+                case INTEGER -> traverseIntArray(object);
+                case LONG -> traverseLongArray(object);
+                case DOUBLE -> traverseDoubleArray(object);
+                case BOOLEAN -> traverseBooleanArray(object);
+                default -> throw new InvalidClassSerdException("Cannot serialize object of type " + obj.javaObject().getObjectType());
+            };
+        }
+
         StringJoiner array = new StringJoiner(", ", "[", "]");
 
         Object[] objects = (Object[]) object;
@@ -100,6 +113,46 @@ public class ObjectSerializer {
             }
         }
 
+        return array.toString();
+    }
+
+    private String traverseBooleanArray(Object object) {
+        StringJoiner array = new StringJoiner(", ", "[", "]");
+
+        boolean[] objects = (boolean[]) object;
+        for (boolean i : objects) {
+            array.add(String.valueOf(i));
+        }
+        return array.toString();
+    }
+
+    private String traverseDoubleArray(Object object) {
+        StringJoiner array = new StringJoiner(", ", "[", "]");
+
+        double[] objects = (double[]) object;
+        for (double i : objects) {
+            array.add(String.valueOf(i));
+        }
+        return array.toString();
+    }
+
+    private String traverseLongArray(Object object) {
+        StringJoiner array = new StringJoiner(", ", "[", "]");
+
+        long[] objects = (long[]) object;
+        for(long i : objects){
+            array.add(String.valueOf(i));
+        }
+        return array.toString();
+    }
+
+    private String traverseIntArray(Object object) {
+        StringJoiner array = new StringJoiner(", ", "[", "]");
+
+        int[] objects = (int[]) object;
+        for(int i : objects){
+            array.add(String.valueOf(i));
+        }
         return array.toString();
     }
 

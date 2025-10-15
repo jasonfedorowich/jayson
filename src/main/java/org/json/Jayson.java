@@ -17,6 +17,7 @@ public class Jayson {
     //todo handle primitives
     //todo use the class template to find fields not matching exactly
     //todo support primitives?
+    //todo allow formatting
 
     public static <T> T fromString(String json, Class<T> type) {
         ObjectDeserializer<T> deserializer = ObjectMapper.getDeserializer(json, type);

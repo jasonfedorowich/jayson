@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,6 +36,27 @@ class JaysonTest {
 
     public static class ArrayPojo{
         List<String> values;
+    }
+
+    public static class PrimitivesPojo {
+        int x;
+        double y;
+        boolean bool;
+        long l1;
+
+        int[] ints;
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            PrimitivesPojo that = (PrimitivesPojo) o;
+            return x == that.x && Double.compare(y, that.y) == 0 && bool == that.bool && l1 == that.l1 && Objects.deepEquals(ints, that.ints);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y, bool, l1, Arrays.hashCode(ints));
+        }
     }
 
 
@@ -82,5 +105,17 @@ class JaysonTest {
 
         String newJson = Jayson.toString(pojo);
         assertFalse(newJson.isEmpty());
+    }
+
+    @Test
+    void testJaysonDeserWithPrimitives(){
+        String json = "{\"x\": 1, \"y\": 2.0, \"bool\": true, \"l1\": 100, \"ints\": [1, 2, 3]}";
+        PrimitivesPojo pojo = Jayson.fromString(json, PrimitivesPojo.class);
+        Assertions.assertInstanceOf(PrimitivesPojo.class, pojo);
+
+        String newJson = Jayson.toString(pojo);
+        PrimitivesPojo pojo2 = Jayson.fromString(newJson, PrimitivesPojo.class);
+        Assertions.assertEquals(pojo, pojo2);
+
     }
 }

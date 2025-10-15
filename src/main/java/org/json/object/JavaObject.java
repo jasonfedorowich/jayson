@@ -10,4 +10,8 @@ interface JavaObject {
     }
 
     Type getObjectType();
+
+    default boolean isPrimitive(){
+        return false;
+    }
 }

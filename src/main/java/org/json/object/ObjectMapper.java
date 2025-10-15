@@ -25,6 +25,14 @@ public class ObjectMapper {
         JAVA_TYPES.put(Long.class, new LongObject(Long.class));
     }
 
+    private static final Map<String, JavaObject> PRIMITIVES = new HashMap<>();
+    static {
+        PRIMITIVES.put("int", new PrimitiveIntegerObject(Integer.class));
+        PRIMITIVES.put("boolean", new PrimitiveBooleanObject(Boolean.class));
+        PRIMITIVES.put("double", new PrimitiveDoubleObject(Double.class));
+        PRIMITIVES.put("long", new PrimitiveLongObject(Long.class));
+    }
+
     private final JavaObject root;
 
 
@@ -43,7 +51,10 @@ public class ObjectMapper {
     private JavaObject reflect(Class<?> type) throws NoSuchFieldException {
         if(JAVA_TYPES.containsKey(type)){
             return JAVA_TYPES.get(type);
+        }else if(PRIMITIVES.containsKey(type.getName())){
+            return PRIMITIVES.get(type.getName());
         }
+
         Field[] fields = type.getDeclaredFields();
         POJO javaClass = new POJO(type, fields);
 
@@ -67,9 +78,14 @@ public class ObjectMapper {
 
     private JavaObject reflectArray(Class<?> f) throws NoSuchFieldException {
         Class<?> arrayType = f.getComponentType();
+
         if(arrayType.isArray()){
             return new ArrayObject(arrayType, reflectArray(arrayType));
         }else{
+            JavaObject javaObject = reflect(arrayType);
+            if(javaObject instanceof TerminalObject to){
+           //     return new ArrayObject(to.getType(), javaObject);
+            }
             return new ArrayObject(arrayType, reflect(arrayType));
         }
     }
@@ -215,6 +231,18 @@ public class ObjectMapper {
 
     }
 
+    static class PrimitiveIntegerObject extends IntegerObject{
+
+        public PrimitiveIntegerObject(Class<?> type) {
+            super(type);
+        }
+
+        @Override
+        public boolean isPrimitive() {
+            return true;
+        }
+    }
+
     static class BooleanObject extends TerminalObject {
         public BooleanObject(Class<?> type) {
             super(type);
@@ -224,6 +252,18 @@ public class ObjectMapper {
         public Type getTerminalType() {
             return Type.BOOLEAN;
         }
+    }
+
+    static class PrimitiveBooleanObject extends BooleanObject{
+        public PrimitiveBooleanObject(Class<?> type){
+            super(type);
+        }
+
+        @Override
+        public boolean isPrimitive() {
+            return true;
+        }
+
     }
     static class DoubleObject extends TerminalObject {
         public DoubleObject(Class<?> type) {
@@ -235,6 +275,18 @@ public class ObjectMapper {
             return Type.DOUBLE;
         }
     }
+
+    static class PrimitiveDoubleObject extends DoubleObject{
+
+        public PrimitiveDoubleObject(Class<?> type) {
+            super(type);
+        }
+
+        @Override
+        public boolean isPrimitive() {
+            return true;
+        }
+    }
     static class LongObject extends TerminalObject {
         public LongObject(Class<?> type) {
             super(type);
@@ -244,6 +296,17 @@ public class ObjectMapper {
         public Type getTerminalType() {
             return Type.LONG;
         }
+    }
+
+    static class PrimitiveLongObject extends LongObject{
+        public PrimitiveLongObject(Class<?> type) {
+            super(type);
+        }
+        @Override
+        public boolean isPrimitive() {
+            return true;
+        }
+
     }
 
     public static <T> ObjectDeserializer<T> getDeserializer(String json, Class<T> type) {

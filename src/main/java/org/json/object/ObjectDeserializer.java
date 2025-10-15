@@ -34,7 +34,7 @@ public class ObjectDeserializer<T> {
     }
 
     private Object traverse(Object obj, JavaObject root) {
-        if (obj instanceof LinkedList) {
+        if (obj instanceof LinkedList ll) {
             ObjectMapper.POJO pojo = (ObjectMapper.POJO) root;
             Object newObject = objectInstantiator.newInstance(pojo.getType());
             Field[] fields = newObject.getClass().getDeclaredFields();
@@ -44,7 +44,7 @@ public class ObjectDeserializer<T> {
             if(next instanceof ObjectMapper.ArrayObject) {
                 setField(arrayField, newObject,  traverseArray((LinkedList<Object>) obj, next));
             }else if(next instanceof ObjectMapper.ParamObject){
-                setField(arrayField, newObject, traverseList((LinkedList<Object>) obj, next));
+                setField(arrayField, newObject, traverseList(ll, next));
             }else{
                 throw new InvalidClassSerdException("Invalid object");
             }
@@ -55,6 +55,62 @@ public class ObjectDeserializer<T> {
         } else {
             return null;
         }
+    }
+
+    private Object traverseIntegerArray(LinkedList<Object> obj) {
+        int[] array = objectInstantiator.newIntArray(obj.size());
+        for(int i = 0; i < obj.size(); i++){
+            switch(obj.get(i)){
+                case Long j:
+                    array[i] = j.intValue();
+                    break;
+                default:
+                    throw new InvalidClassSerdException("Invalid object");
+            }
+        }
+        return array;
+    }
+
+    private Object traverseBooleanArray(LinkedList<Object> obj) {
+        boolean[] array = objectInstantiator.newBooleanArray(obj.size());
+        for(int i = 0; i < obj.size(); i++){
+            switch(obj.get(i)){
+                case Boolean j:
+                    array[i] = j;
+                    break;
+                default:
+                    throw new InvalidClassSerdException("Invalid object");
+            }
+        }
+        return array;
+    }
+
+    private Object traverseDoubleArray(LinkedList<Object> obj) {
+        double[] array = objectInstantiator.newDoubleArray(obj.size());
+        for(int i = 0; i < obj.size(); i++){
+            switch(obj.get(i)){
+                case Double j:
+                    array[i] = j;
+                    break;
+                default:
+                    throw new InvalidClassSerdException("Invalid object");
+            }
+        }
+        return array;
+    }
+
+    private Object traverseLongArray(LinkedList<Object> obj) {
+        long[] array = objectInstantiator.newLongArray(obj.size());
+        for(int i = 0; i < obj.size(); i++){
+            switch(obj.get(i)){
+                case Long j:
+                    array[i] = j;
+                    break;
+                default:
+                    throw new InvalidClassSerdException("Invalid object");
+            }
+        }
+        return array;
     }
 
     private Object traverseList(LinkedList<Object> obj, JavaObject next) {
@@ -89,6 +145,18 @@ public class ObjectDeserializer<T> {
 
     private Object traverseArray(LinkedList<Object> obj, JavaObject javaObject) {
         ObjectMapper.ArrayObject arrayObject = (ObjectMapper.ArrayObject) javaObject;
+
+        if(arrayObject.javaObject().isPrimitive()){
+            ObjectMapper.TerminalObject terminalObject = (ObjectMapper.TerminalObject) arrayObject.javaObject();
+
+            return switch (terminalObject.getTerminalType()){
+                case BOOLEAN -> traverseBooleanArray(obj);
+                case DOUBLE -> traverseDoubleArray(obj);
+                case INTEGER -> traverseIntegerArray(obj);
+                case LONG -> traverseLongArray(obj);
+                default -> throw new InvalidClassSerdException("Invalid object expected primitive type");
+            };
+        }
         Object[] array = (Object[]) objectInstantiator.newArray(arrayObject.componentType(), obj.size());
 
         AtomicInteger index = new AtomicInteger(0);

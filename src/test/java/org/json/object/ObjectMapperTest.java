@@ -34,6 +34,15 @@ class ObjectMapperTest {
         String[][] strings2;
     }
 
+    static class SimpleClass5 {
+        int x;
+        double y;
+        boolean bool;
+        long l1;
+
+        int[] ints;
+    }
+
     @Test
     public void testObjectClassMapping() {
         ObjectMapper objectMapper = new ObjectMapper(SimpleClass1.class);
@@ -84,6 +93,23 @@ class ObjectMapperTest {
         assertInstanceOf(ObjectMapper.ArrayObject.class, arrayObject.javaObject());
         ObjectMapper.ArrayObject arrayObject1 = (ObjectMapper.ArrayObject) arrayObject.javaObject();
         assertInstanceOf(ObjectMapper.TerminalObject.class, arrayObject1.javaObject());
+
+    }
+
+    @Test
+    public void testPrimitivesObjectMapping() {
+        ObjectMapper objectMapper = new ObjectMapper(SimpleClass5.class);
+        JavaObject javaObject = objectMapper.getJavaObject();
+        assertInstanceOf(ObjectMapper.POJO.class, javaObject);
+        ObjectMapper.POJO pojo1 = (ObjectMapper.POJO) javaObject;
+        assertEquals(5, pojo1.getJavaObjects().size());
+
+        assertInstanceOf(ObjectMapper.IntegerObject.class, pojo1.getJavaObjects().getFirst());
+        assertInstanceOf(ObjectMapper.DoubleObject.class, pojo1.getJavaObjects().get(1));
+        assertInstanceOf(ObjectMapper.BooleanObject.class, pojo1.getJavaObjects().get(2));
+        assertInstanceOf(ObjectMapper.LongObject.class, pojo1.getJavaObjects().get(3));
+        assertInstanceOf(ObjectMapper.ArrayObject.class, pojo1.getJavaObjects().get(4));
+
 
     }
 }

@@ -50,4 +50,20 @@ public class ObjectInstantiator {
         return Array.newInstance((Class<?>) type,length);
     }
 
+    public int[] newIntArray(int length) {
+        return new int[length];
+    }
+
+    public boolean[] newBooleanArray(int length) {
+        return new boolean[length];
+    }
+
+    public double[] newDoubleArray(int length) {
+        return new double[length];
+    }
+
+    public long[] newLongArray(int length) {
+        return new long[length];
+    }
+
 }
