@@ -1,9 +1,9 @@
 package org.json.object;
 
 import org.json.error.InvalidClassSerdException;
+import org.json.format.Formatter;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -13,11 +13,13 @@ public class ObjectSerializer {
 
     private final Object src;
     private final JavaObject root;
+    private final Formatter formatter;
 
-    ObjectSerializer(Object src) {
+    ObjectSerializer(Object src, Formatter formatter) {
         this.src = src;
         ObjectMapper mapper = new ObjectMapper(src.getClass());
         this.root = mapper.getJavaObject();
+        this.formatter = formatter;
     }
 
     public String serialize() {
@@ -28,10 +30,14 @@ public class ObjectSerializer {
     }
 
     private String traverse(Object src, ObjectMapper.POJO pojo) {
+        formatter.nextObject();
         if(src == null) {
             return "null";
         }
-        StringJoiner javaObject = new StringJoiner(", ", "{", "}");
+        StringJoiner javaObject = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatObjectBegin("{"),
+                formatter.formatObjectEnd("}"));
 
         List<JavaObject> objects = new LinkedList<>(pojo.getJavaObjects());
         LinkedList<Field> fields = Stream.of(pojo.getFields()).collect(LinkedList::new, List::add,
@@ -39,7 +45,7 @@ public class ObjectSerializer {
 
         for(JavaObject obj : objects){
             Field field = fields.removeFirst();
-            StringJoiner fieldJoiner = new StringJoiner(":");
+            StringJoiner fieldJoiner = new StringJoiner(formatter.formatColon(":"));
             fieldJoiner.add(addName(field));
             switch (obj.getObjectType()){
                 case POJO -> fieldJoiner.add(traverse(getObject(field, src), (ObjectMapper.POJO)obj));
@@ -48,9 +54,9 @@ public class ObjectSerializer {
                 case TERMINAL -> fieldJoiner.add(traverseTerm(getObject(field, src), (ObjectMapper.TerminalObject)obj));
             }
 
-            javaObject.add(fieldJoiner.toString());
+            javaObject.add(formatter.formatObjectMember(fieldJoiner.toString()));
         }
-
+        formatter.finishObject();
         return javaObject.toString();
     }
 
@@ -65,21 +71,37 @@ public class ObjectSerializer {
     }
 
     private String traverseList(Object object, ObjectMapper.EmbeddedJavaObject obj) {
+        formatter.nextObject();
         if(object == null) {
             return "null";
         }
-        StringJoiner array = new StringJoiner(", ", "[", "]");
+        StringJoiner array = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatArrayBegin("["),
+                formatter.formatArrayEnd("]"));
 
         List<Object> objects = (List<Object>) object;
         for(Object o : objects){
             switch(obj.javaObject().getObjectType()){
-                case POJO -> array.add(traverse(o, (ObjectMapper.POJO) obj.javaObject()));
-                case LIST -> array.add(traverseList(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject()));
-                case ARRAY -> array.add(traverseArray(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject()));
-                case TERMINAL -> array.add(traverseTerm(o, (ObjectMapper.TerminalObject)obj.javaObject()));
+                case POJO -> {
+                    array.add(
+                            formatter.formatArrayMember(traverse(o, (ObjectMapper.POJO) obj.javaObject())));
+                }
+                case LIST -> {
+                    array.add(
+                            formatter.formatArrayMember(traverseList(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject())));
+                }
+                case ARRAY -> {
+                    array.add(
+                            formatter.formatArrayMember(traverseArray(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject())));
+                }
+                case TERMINAL -> {
+                    array.add(
+                            formatter.formatArrayMember(traverseTerm(o, (ObjectMapper.TerminalObject)obj.javaObject())));
+                }
             }
         }
-
+        formatter.finishObject();
         return array.toString();
 
     }
@@ -101,58 +123,96 @@ public class ObjectSerializer {
             };
         }
 
-        StringJoiner array = new StringJoiner(", ", "[", "]");
+        formatter.nextObject();
+
+
+        StringJoiner array = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatArrayBegin("["),
+                formatter.formatArrayEnd("]"));
 
         Object[] objects = (Object[]) object;
         for(Object o : objects){
             switch(obj.javaObject().getObjectType()){
-                case POJO -> array.add(traverse(o, (ObjectMapper.POJO) obj.javaObject()));
-                case LIST -> array.add(traverseList(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject()));
-                case ARRAY -> array.add(traverseArray(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject()));
-                case TERMINAL -> array.add(traverseTerm(o, (ObjectMapper.TerminalObject)obj.javaObject()));
+                case POJO -> array.add(
+                        formatter.formatArrayMember(traverse(o, (ObjectMapper.POJO) obj.javaObject())));
+                case LIST -> array.add(
+                        formatter.formatArrayMember(traverseList(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject())));
+                case ARRAY -> array.add(
+                        formatter.formatArrayMember(traverseArray(o, (ObjectMapper.EmbeddedJavaObject) obj.javaObject())));
+                case TERMINAL -> array.add(
+                        formatter.formatArrayMember(traverseTerm(o, (ObjectMapper.TerminalObject)obj.javaObject())));
             }
         }
+        formatter.finishObject();
 
         return array.toString();
     }
 
     private String traverseBooleanArray(Object object) {
-        StringJoiner array = new StringJoiner(", ", "[", "]");
+        formatter.nextObject();
+        StringJoiner array = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatArrayBegin("["),
+                formatter.formatArrayEnd("]"));
 
         boolean[] objects = (boolean[]) object;
         for (boolean i : objects) {
-            array.add(String.valueOf(i));
+            array.add(
+                    formatter.formatArrayMember(String.valueOf(i)
+                    ));
         }
+        formatter.finishObject();
+
         return array.toString();
     }
 
     private String traverseDoubleArray(Object object) {
-        StringJoiner array = new StringJoiner(", ", "[", "]");
+        formatter.nextObject();
+
+        StringJoiner array = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatArrayBegin("["),
+                formatter.formatArrayEnd("]"));
 
         double[] objects = (double[]) object;
         for (double i : objects) {
-            array.add(String.valueOf(i));
+            array.add(
+                    formatter.formatArrayMember(String.valueOf(i)));
         }
+        formatter.finishObject();
         return array.toString();
     }
 
     private String traverseLongArray(Object object) {
-        StringJoiner array = new StringJoiner(", ", "[", "]");
+        formatter.nextObject();
+        StringJoiner array = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatArrayBegin("["),
+                formatter.formatArrayEnd("]"));
 
         long[] objects = (long[]) object;
         for(long i : objects){
-            array.add(String.valueOf(i));
+            array.add(
+                    formatter.formatArrayMember(String.valueOf(i)));
         }
+        formatter.finishObject();
         return array.toString();
     }
 
     private String traverseIntArray(Object object) {
-        StringJoiner array = new StringJoiner(", ", "[", "]");
+        formatter.nextObject();
+        StringJoiner array = new StringJoiner(
+                formatter.formatComma(","),
+                formatter.formatArrayBegin("["),
+                formatter.formatArrayEnd("]"));
 
         int[] objects = (int[]) object;
         for(int i : objects){
-            array.add(String.valueOf(i));
+            array.add(
+                    formatter.formatArrayMember(String.valueOf(i)));
         }
+        formatter.finishObject();
         return array.toString();
     }
 

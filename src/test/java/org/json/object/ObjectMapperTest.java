@@ -4,7 +4,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -98,6 +101,7 @@ class ObjectMapperTest {
 
     @Test
     public void testPrimitivesObjectMapping() {
+
         ObjectMapper objectMapper = new ObjectMapper(SimpleClass5.class);
         JavaObject javaObject = objectMapper.getJavaObject();
         assertInstanceOf(ObjectMapper.POJO.class, javaObject);

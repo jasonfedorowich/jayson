@@ -1,5 +1,6 @@
 package org.json;
 
+import org.json.format.BeautifyFormatter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -117,5 +118,17 @@ class JaysonTest {
         PrimitivesPojo pojo2 = Jayson.fromString(newJson, PrimitivesPojo.class);
         Assertions.assertEquals(pojo, pojo2);
 
+    }
+
+    @Test
+    void testJaysonWithFormatting(){
+        String json = "{\"x\": 1, \"y\": 2.0, \"bool\": true, \"l1\": 100, \"ints\": [1, 2, 3]}";
+        PrimitivesPojo pojo = Jayson.fromString(json, PrimitivesPojo.class);
+        Assertions.assertInstanceOf(PrimitivesPojo.class, pojo);
+
+        String formattedJson = "{\n\t\"x\": 1,\n\t\"y\": 2.0,\n\t\"bool\": true,\n\t\"l1\": 100,\n\t\"ints\": [\n\t\t1,\n\t\t2,\n\t\t3\n\t]\n}";
+        String newJson = Jayson.toString(pojo, new BeautifyFormatter());
+
+        Assertions.assertEquals(formattedJson, newJson);
     }
 }

@@ -1,21 +1,16 @@
 package org.json.object;
 
 import org.json.error.InvalidObjectMapperException;
+import org.json.format.Formatter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ObjectMapper {
 
-//    private static Map<Type, ObjectMapper> OBJECT_MAPPERS = new HashMap<>();
-//
-//    private final Map<Type, Object> objects = new HashMap<>();
-//
+
     private static final Map<Class<?>, JavaObject> JAVA_TYPES = new HashMap<Class<?>, JavaObject>();
     static {
         JAVA_TYPES.put(String.class, new StringObject(String.class));
@@ -43,6 +38,8 @@ public class ObjectMapper {
             throw new InvalidObjectMapperException(e);
         }
     }
+
+
 
     public JavaObject getJavaObject(){
         return root;
@@ -313,7 +310,7 @@ public class ObjectMapper {
         return new ObjectDeserializer<T>(json, type);
     }
 
-    public static ObjectSerializer getSerializer(Object src) {
-        return new ObjectSerializer(src);
+    public static ObjectSerializer getSerializer(Object src, Formatter formatter) {
+        return new ObjectSerializer(src, formatter);
     }
 }

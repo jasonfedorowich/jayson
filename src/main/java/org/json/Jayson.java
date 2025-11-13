@@ -1,23 +1,14 @@
 package org.json;
 
-import org.json.error.InvalidClassSerdException;
+import org.json.format.BeautifyFormatter;
+import org.json.format.DefaultFormatter;
+import org.json.format.Formatter;
 import org.json.object.*;
-import org.json.parser.Parser;
-import org.json.parser.token.Tokenizer;
-
-import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class Jayson {
 
-    //todo handle primitives
     //todo use the class template to find fields not matching exactly
-    //todo support primitives?
-    //todo allow formatting
+    //todo support search language jsonpath
 
     public static <T> T fromString(String json, Class<T> type) {
         ObjectDeserializer<T> deserializer = ObjectMapper.getDeserializer(json, type);
@@ -25,7 +16,11 @@ public class Jayson {
     }
 
     public static String toString(Object src){
-        ObjectSerializer serializer = ObjectMapper.getSerializer(src);
+        return toString(src, new DefaultFormatter());
+    }
+
+    public static String toString(Object src, Formatter formatter){
+        ObjectSerializer serializer = ObjectMapper.getSerializer(src, formatter);
         return serializer.serialize();
     }
     
